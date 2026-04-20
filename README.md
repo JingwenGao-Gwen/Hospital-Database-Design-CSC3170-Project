@@ -96,3 +96,21 @@ If you reuse any part elsewhere, keep your institution’s academic integrity ru
 ## Authors
 
 - Group members: *(add names and student IDs here)*
+
+## Push to GitHub (you run these locally)
+
+This folder is already a Git repo with an initial commit. You cannot push without logging in to GitHub.
+
+1. On GitHub: **New repository** → create **empty** repo (no README, no `.gitignore` template), copy the HTTPS URL, e.g. `https://github.com/YOUR_USERNAME/YOUR_REPO.git`.
+
+2. In this project folder:
+
+   ```bash
+   git branch -M main
+   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+   git push -u origin main
+   ```
+
+   If Git asks for credentials, use a **Personal Access Token** (PAT) as the password, or use **GitHub Desktop** / **Git Credential Manager**.
+
+3. Optional: set the default branch name on GitHub to `main` if it still shows `master` locally—`git branch -M main` above does that before push.
