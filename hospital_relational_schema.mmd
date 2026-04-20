@@ -1,0 +1,83 @@
+%% Relational schema (tabular mapping). PK/FK as suffix on attribute lines.
+%% Renders in Mermaid Live / GitHub; for print layout see hospital_relational_schema.html
+
+classDiagram
+    direction TB
+
+    class PROVINCES {
+        char province_id PK
+        varchar province_name
+    }
+
+    class PATIENT_EMERGENCY_CONTACT {
+        int pec_id PK
+        varchar first_name
+        varchar last_name
+        char phone
+    }
+
+    class DOCTOR_EMERGENCY_CONTACT {
+        int dec_id PK
+        varchar first_name
+        varchar last_name
+        char phone
+    }
+
+    class PATIENTS {
+        int patient_id PK
+        varchar first_name
+        varchar last_name
+        char gender
+        date birth_date
+        varchar city
+        varchar allergies
+        decimal height
+        decimal weight
+        char phone
+        char province_id FK
+        int pec_id FK
+    }
+
+    class DEPARTMENTS {
+        int dept_id PK
+        varchar dept_name
+    }
+
+    class DOCTORS {
+        int doctor_id PK
+        varchar first_name
+        varchar last_name
+        varchar speciality
+        int years_of_exp
+        char phone
+        int dept_id FK
+        int dec_id FK
+    }
+
+    class ADMISSIONS {
+        int admission_id PK
+        int patient_id FK
+        int attending_doctor_id FK
+        int admission_dept_id FK
+        date admission_date
+        varchar diagnosis
+        int diag_severity
+    }
+
+    class DISCHARGES {
+        int discharge_id PK
+        int admission_id FK
+        int discharge_dept_id FK
+        int discharge_doctor_id FK
+        date discharge_date
+        char discharge_status
+    }
+
+    class TREATMENT_LOG {
+        int log_id PK
+        int admission_id FK
+        int examining_doctor_id FK
+        int to_dept_id FK
+        varchar exam_result
+        date exam_date
+    }

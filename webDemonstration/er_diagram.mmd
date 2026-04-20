@@ -1,0 +1,77 @@
+erDiagram
+    PROVINCES ||--o{ PATIENTS : resides_in
+    PATIENT_EMERGENCY_CONTACT ||--o{ PATIENTS : pec_for_patient
+
+    PATIENTS ||--o{ ADMISSIONS : records
+
+    DEPARTMENTS ||--o{ DOCTORS : belongs_to
+    DOCTOR_EMERGENCY_CONTACT ||--o{ DOCTORS : dec_for_doctor
+
+    DEPARTMENTS ||--o{ ADMISSIONS : admission_dept
+    DOCTORS ||--o{ ADMISSIONS : attends
+
+    ADMISSIONS ||--o| DISCHARGES : inpatient_episode
+    DEPARTMENTS ||--o{ DISCHARGES : discharge_dept
+    DOCTORS ||--o{ DISCHARGES : discharge_by
+
+    ADMISSIONS ||--o{ TREATMENT_LOG : stay_evaluations
+    DEPARTMENTS ||--o{ TREATMENT_LOG : to_dept
+    DOCTORS ||--o{ TREATMENT_LOG : examines
+
+    PROVINCES {
+        char province_id PK
+        string province_name
+    }
+    PATIENTS {
+        int patient_id PK
+        string first_name
+        string last_name
+        char gender
+        date birth_date
+        string city
+        string allergies
+        decimal height
+        decimal weight
+        char phone
+    }
+    DEPARTMENTS {
+        int dept_id PK
+        string dept_name
+    }
+    DOCTORS {
+        int doctor_id PK
+        string first_name
+        string last_name
+        string speciality
+        int years_of_exp
+        char phone
+    }
+    ADMISSIONS {
+        int admission_id PK
+        date admission_date
+        string diagnosis
+        int diag_severity
+    }
+    DISCHARGES {
+        int discharge_id PK
+        date discharge_date
+        char discharge_status
+    }
+    PATIENT_EMERGENCY_CONTACT {
+        int pec_id PK
+        string first_name
+        string last_name
+        char phone
+    }
+    DOCTOR_EMERGENCY_CONTACT {
+        int dec_id PK
+        string first_name
+        string last_name
+        char phone
+    }
+    TREATMENT_LOG {
+        int log_id PK
+        string exam_result
+        date exam_date
+    }
+

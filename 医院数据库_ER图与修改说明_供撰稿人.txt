@@ -1,0 +1,143 @@
+================================================================================
+医院数据库概念模式说明
+================================================================================
+
+一、实体与属性（仅各 entity set 自身属性；不在此列出外键列）
+================================================================================
+说明：
+
+1. Analyze the requirements of the organization and the specific application
+主要讲一下我们的设定，主要功能就是记录患者在医院内的行为和动向，还有患者的基本信息。强调一下每个人必须有且仅有一个紧急联系人。医生只能在一个科室
+
+2. Identify the relevant entities, attributes, and relationships together with any constraints and properties
+这个表里不加外键，就是本身的attribute，外键的关系用relationship set表示
+
+   【ER 图精简】出院、治疗日志与病人的关联不单独再画 PATIENTS—DISCHARGES、PATIENTS—TREATMENT_LOG：
+   已由 PATIENTS—ADMISSIONS—DISCHARGES / TREATMENT_LOG 表达「属于哪次住院、进而属于哪位病人」。
+   关系模式中 DISCHARGES、TREATMENT_LOG 只保留 admission_id（等）外键，不冗余存 patient_id。
+
+3. Produce an E-R diagram for the database
+
+4. Convert the E-R diagrams to relational schemas (clearly indicating the primary keys, foreign keys, functional and/or multivalued dependencies,
+as well as justifying that your designs are in good, normalized form
+依照hospital_relational_schema.html内容开始进行normalization（初步想法）
+
+LLM：可以说这个详细标明出院、住院还有就诊日志的idea是ai提供的，然后对比图就是咱们使用过的这两个er图
+
+1. PROVINCES（省 / 行政区）
+   - province_id：char，PK
+   - province_name：string
+
+2. PATIENTS（病人）
+   - patient_id：int，PK
+   - first_name、last_name：string
+   - gender：char
+   - birth_date：date
+   - city：string
+   - allergies：string
+   - height、weight：decimal
+   - phone：char（本人联系电话）
+
+3. DEPARTMENTS（科室）
+   - dept_id：int，PK
+   - dept_name：string
+
+4. DOCTORS（医生）
+   - doctor_id：int，PK
+   - first_name、last_name：string
+   - speciality：string（与 Excel 一致；个人专长描述）
+   - years_of_exp：int
+   - phone：char（本人联系电话）
+
+5. ADMISSIONS（入院 / 一次住院事件）
+   - admission_id：int，PK
+   - admission_date：date
+   - diagnosis：string
+   - diag_severity：int
+
+6. DISCHARGES（出院）
+   - discharge_id：int，PK
+   - discharge_date：date
+   - discharge_status：char
+
+7. PATIENT_EMERGENCY_CONTACT（病人紧急联系人）
+   - pec_id：int，PK
+   - first_name、last_name：string
+   - phone：char
+
+8. DOCTOR_EMERGENCY_CONTACT（医生紧急联系人）
+   - dec_id：int，PK
+   - first_name、last_name：string
+   - phone：char
+
+9. TREATMENT_LOG（治疗 / 评价日志）
+   - log_id：int，PK
+   - exam_result：string（医生检查结果 / 评价内容）
+   - exam_date：date
+
+
+二、联系集（relationship sets）、基数与含义
+================================================================================
+（以下「1:N」表示一端对多端；「N:1」表示多端对一端；基数按 Crow’s foot 图读法。）
+
+1. PROVINCES — resides_in — PATIENTS
+   基数：1 : N。含义：病人所属省 / 户籍地。
+
+2. PATIENT_EMERGENCY_CONTACT — pec_for_patient — PATIENTS
+   基数：N : 1。含义：多名病人可共用同一联系人；每名病人对应一个病人侧紧急联系人。
+
+3. PATIENTS — records — ADMISSIONS
+   基数：1 : N。含义：病人历次住院；每次入院一条 ADMISSIONS。
+
+4. DEPARTMENTS — belongs_to — DOCTORS
+   基数：1 : N。含义：医生所属科室。
+
+5. DOCTOR_EMERGENCY_CONTACT — dec_for_doctor — DOCTORS
+   基数：N : 1。含义：医生侧紧急联系人。
+
+6. DEPARTMENTS — admission_dept — ADMISSIONS
+   基数：1 : N。含义：本次入院的收入 / 入院科室（外键由本联系表达）。
+
+7. DOCTORS — attends — ADMISSIONS
+   基数：1 : N。含义：该次入院的经治 / 主治医生。
+
+8. ADMISSIONS — inpatient_episode — DISCHARGES
+   基数：1 : 0..1（一次入院至多对应一条出院记录；**尚未出院**时无 DISCHARGES 实例）。
+   含义：同一住院事件在出院后形成闭环；在院期间只有 ADMISSIONS，无对应 DISCHARGES。
+   （病人与某次出院的关系由「该出院对应的入院」经 records 推出，不单设 PATIENTS—DISCHARGES。）
+
+9. DEPARTMENTS — discharge_dept — DISCHARGES
+   基数：1 : N。含义：出院时所在科室。
+
+10. DOCTORS — discharge_by — DISCHARGES
+    基数：1 : N。含义：办理 / 记录本次出院的医生（与入院经治医生可不同，依业务定）。
+
+11. ADMISSIONS — stay_evaluations — TREATMENT_LOG
+    基数：1 : N。含义：该次住院期间的评价日志。
+    （日志所属病人由 admission → patient 推出，不单设 PATIENTS—TREATMENT_LOG。）
+
+12. DEPARTMENTS — to_dept — TREATMENT_LOG
+    基数：1 : N。含义：该条日志对应的转往 / 所在科室（原列名 current_dept_id，已与 Excel 对齐为 to_dept_id）。
+
+13. DOCTORS — examines — TREATMENT_LOG
+    基数：1 : N。含义：作出检查或评价的医生。
+
+映射到关系模式时：上述联系在表中实现为外键列 + 参照完整性约束；不在 ER 实体框内
+重复画外键属性。
+
+
+三、完整性约束（不画在 ER 图内，DDL / 触发器或应用层）
+================================================================================
+   - 同一闭环内：DISCHARGES.discharge_date 晚于 ADMISSIONS.admission_date。
+   - TREATMENT_LOG.exam_date：落在该次 ADMISSIONS 与对应 DISCHARGES（若存在）的日期范围内。
+   - 若某次出院 discharge_status=D（死亡），则该患者不得再插入新的 ADMISSIONS（业务规则，由触发器强制）。
+   - 妇产科（DEPARTMENTS 中 dept_id=4「Obstetrics & Gynecology」）：仅 gender=F 的患者可入该科的入院/出院/治疗日志转科；非女性记录可在导入时改为内科等（或拒收）。
+   - 若某次住院在 TREATMENT_LOG 中没有任何记录，则视为未发生转科：DISCHARGES.discharge_dept_id 必须与 ADMISSIONS.admission_dept_id 一致（出院/主治医生可不同，不受此条限制）。由触发器强制；导入脚本会对不一致行改回入院科室并记入 import_report。
+
+
+四、函数依赖（FD）
+================================================================================
+   - 不在 ER 图中表示；规范化阶段再对各关系模式单独列出。
+
+
+五、关系模式图（含外键列；与 ER 分工不同）

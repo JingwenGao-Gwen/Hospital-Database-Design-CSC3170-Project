@@ -1,0 +1,202 @@
+{
+  "title": "Hospital DB SQL Practice (static)",
+  "groups": [
+    {
+      "id": "select_all",
+      "title": "SELECT *",
+      "items": [
+        {
+          "id": "sel_provinces",
+          "title": "PROVINCES: SELECT *",
+          "sql": "SELECT * FROM provinces;",
+          "result_ref": "table_preview:provinces"
+        },
+        {
+          "id": "sel_patient_emergency_contact",
+          "title": "PATIENT_EMERGENCY_CONTACT: SELECT *",
+          "sql": "SELECT * FROM patient_emergency_contact;",
+          "result_ref": "table_preview:patient_emergency_contact"
+        },
+        {
+          "id": "sel_doctor_emergency_contact",
+          "title": "DOCTOR_EMERGENCY_CONTACT: SELECT *",
+          "sql": "SELECT * FROM doctor_emergency_contact;",
+          "result_ref": "table_preview:doctor_emergency_contact"
+        },
+        {
+          "id": "sel_departments",
+          "title": "DEPARTMENTS: SELECT *",
+          "sql": "SELECT * FROM departments;",
+          "result_ref": "table_preview:departments"
+        },
+        {
+          "id": "sel_patients",
+          "title": "PATIENTS: SELECT *",
+          "sql": "SELECT * FROM patients;",
+          "result_ref": "table_preview:patients"
+        },
+        {
+          "id": "sel_doctors",
+          "title": "DOCTORS: SELECT *",
+          "sql": "SELECT * FROM doctors;",
+          "result_ref": "table_preview:doctors"
+        },
+        {
+          "id": "sel_admissions",
+          "title": "ADMISSIONS: SELECT *",
+          "sql": "SELECT * FROM admissions;",
+          "result_ref": "table_preview:admissions"
+        },
+        {
+          "id": "sel_treatment_log",
+          "title": "TREATMENT_LOG: SELECT *",
+          "sql": "SELECT * FROM treatment_log;",
+          "result_ref": "table_preview:treatment_log"
+        },
+        {
+          "id": "sel_discharges",
+          "title": "DISCHARGES: SELECT *",
+          "sql": "SELECT * FROM discharges;",
+          "result_ref": "table_preview:discharges"
+        }
+      ]
+    },
+    {
+      "id": "insert_examples",
+      "title": "INSERT",
+      "items": [
+        {
+          "id": "ins_ok_department",
+          "title": "Correct INSERT: DEPARTMENTS",
+          "sql": "INSERT INTO departments (dept_id, dept_name) VALUES (99, 'DemoDept');",
+          "expected": {
+            "type": "ok",
+            "message": "Query OK, 1 row affected"
+          }
+        },
+        {
+          "id": "ins_err_obgyn_male_admission",
+          "title": "Error INSERT: male into OB/GYN (ADMISSIONS)",
+          "sql": "INSERT INTO admissions (admission_id, patient_id, attending_doctor_id, admission_dept_id, admission_date, diagnosis, diag_severity)\nVALUES (999001, 1, 1, 4, '2019-01-01', 'Demo', 1);",
+          "expected": {
+            "type": "error",
+            "code": 1644,
+            "message": "Obstetrics and Gynecology is only for female patients"
+          }
+        },
+        {
+          "id": "ins_err_dead_patient_new_admission",
+          "title": "Error INSERT: deceased patient cannot be admitted again",
+          "sql": "INSERT INTO admissions (admission_id, patient_id, attending_doctor_id, admission_dept_id, admission_date, diagnosis, diag_severity)\nVALUES (999002, 92, 1, 1, '2019-02-01', 'Demo', 1);",
+          "expected": {
+            "type": "error",
+            "code": 1644,
+            "message": "Cannot admit: patient already has a deceased (D) discharge"
+          }
+        },
+        {
+          "id": "ins_err_discharge_before_admit",
+          "title": "Error INSERT: discharge_date earlier than admission_date",
+          "sql": "INSERT INTO discharges (discharge_id, admission_id, discharge_dept_id, discharge_doctor_id, discharge_date, discharge_status)\nVALUES (999003, 170, 11, 1, '2018-01-01', 'R');",
+          "expected": {
+            "type": "error",
+            "code": 1644,
+            "message": "discharge_date must be on or after admission_date"
+          }
+        },
+        {
+          "id": "ins_err_no_log_dept_change",
+          "title": "Error INSERT: no treatment_log but discharge_dept changed",
+          "sql": "INSERT INTO discharges (discharge_id, admission_id, discharge_dept_id, discharge_doctor_id, discharge_date, discharge_status)\nVALUES (999004, 19, 1, 1, '2018-06-14', 'R');",
+          "expected": {
+            "type": "error",
+            "code": 1644,
+            "message": "discharge_dept must match admission_dept when admission has no treatment_log"
+          }
+        },
+        {
+          "id": "ins_err_exam_before_admit",
+          "title": "Error INSERT: exam_date before admission_date (TREATMENT_LOG)",
+          "sql": "INSERT INTO treatment_log (log_id, admission_id, examining_doctor_id, to_dept_id, exam_result, exam_date)\nVALUES (999005, 170, 1, 11, 'Demo', '2018-01-01');",
+          "expected": {
+            "type": "error",
+            "code": 1644,
+            "message": "exam_date must be on/after admission_date"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sample_queries",
+      "title": "Sample queries",
+      "items": [
+        {
+          "id": "task6_q1",
+          "title": "Retrieve patients' basic info and their emergency contacts",
+          "sql": "-- Query 1: Retrieve patients' basic info and their emergency contacts\nSELECT \n    p.first_name, \n    p.last_name, \n    p.allergies, \n    pec.first_name AS contact_name, \n    pec.phone AS contact_phone\nFROM PATIENTS p\nJOIN PATIENT_EMERGENCY_CONTACT pec ON p.pec_id = pec.pec_id\nLIMIT 5;",
+          "result_ref": "table_preview:task6_q1"
+        },
+        {
+          "id": "task6_q2",
+          "title": "Count patients by province (top 5 provinces by patient count)",
+          "sql": "-- Query 2: Count patients by province (top 5 provinces by patient count)\nSELECT \n    prov.province_name, \n    COUNT(p.patient_id) AS patient_count\nFROM PATIENTS p\nJOIN PROVINCES prov ON p.province_id = prov.province_id\nGROUP BY prov.province_name\nORDER BY patient_count DESC\nLIMIT 5;",
+          "result_ref": "table_preview:task6_q2"
+        },
+        {
+          "id": "task6_q3",
+          "title": "Admission and discharge timeline; ADMISSIONS links PATIENTS and DISCHARGES (routine discharge only)",
+          "sql": "-- Query 3: Admission and discharge timeline; ADMISSIONS links PATIENTS and DISCHARGES (routine discharge only)\nSELECT \n    p.first_name, \n    p.last_name, \n    a.admission_date, \n    d.discharge_date, \n    d.discharge_status\nFROM ADMISSIONS a\nJOIN PATIENTS p ON a.patient_id = p.patient_id\nJOIN DISCHARGES d ON a.admission_id = d.admission_id\nWHERE d.discharge_status = 'R' -- 'R' = recovered (routine discharge)\nLIMIT 5;",
+          "result_ref": "table_preview:task6_q3"
+        },
+        {
+          "id": "task6_q4",
+          "title": "Patients with an inter-department transfer during the stay, and destination department",
+          "sql": "-- Query 4: Patients with an inter-department transfer during the stay, and destination department\nSELECT \n    p.last_name, \n    a.diagnosis, \n    tl.exam_date AS transfer_date, \n    dept.dept_name AS transferred_to\nFROM TREATMENT_LOG tl\nJOIN ADMISSIONS a ON tl.admission_id = a.admission_id\nJOIN PATIENTS p ON a.patient_id = p.patient_id\nJOIN DEPARTMENTS dept ON tl.to_dept_id = dept.dept_id\nLIMIT 5;",
+          "result_ref": "table_preview:task6_q4"
+        },
+        {
+          "id": "task6_q5",
+          "title": "Top 3 doctors by number of admissions handled (attending doctor)",
+          "sql": "-- Query 5: Top 3 doctors by number of admissions handled (attending doctor)\nSELECT \n    doc.last_name AS doctor_name, \n    doc.speciality, \n    COUNT(a.admission_id) AS total_admissions_handled\nFROM DOCTORS doc\nJOIN ADMISSIONS a ON doc.doctor_id = a.attending_doctor_id\nGROUP BY doc.doctor_id, doc.speciality\nORDER BY total_admissions_handled DESC\nLIMIT 3;",
+          "result_ref": "table_preview:task6_q5"
+        },
+        {
+          "id": "task6_q6",
+          "title": "Severe admissions (severity >= 4) with penicillin allergy noted in allergies",
+          "sql": "-- Query 6: Severe admissions (severity >= 4) with penicillin allergy noted in allergies\nSELECT \n    p.first_name, \n    p.last_name, \n    p.allergies, \n    a.diagnosis, \n    a.diag_severity\nFROM PATIENTS p\nJOIN ADMISSIONS a ON p.patient_id = a.patient_id\nWHERE a.diag_severity >= 4 \n  AND p.allergies LIKE '%Penicillin%';",
+          "result_ref": "table_preview:task6_q6"
+        }
+      ]
+    },
+    {
+      "id": "analytic_queries",
+      "title": "Analytical examples",
+      "items": [
+        {
+          "id": "task7_q1",
+          "title": "Data mining (classification) Doctor Experience vs. Patient Discharge Status",
+          "sql": "-- 1. Data mining (classification) Doctor Experience vs. Patient Discharge Status\n-- Predict Discharge Class (R for recovered/T for transferred/D for deceased) using Doctor Experience Level\nWITH classification_data AS (\n    -- Labeled training instances (items + attributes + known classes)\n    SELECT\n        a.admission_id AS item_id,\n        dr.years_of_exp,\n        -- Attribute: Doctor experience level\n        CASE\n            WHEN dr.years_of_exp < 5 THEN 'Junior'\n            WHEN dr.years_of_exp BETWEEN 5 AND 15 THEN 'Intermediate'\n            ELSE 'Senior'\n        END AS doctor_experience_level,\n        -- Class: Actual discharge status\n        dis.discharge_status AS actual_class\n    FROM ADMISSIONS a\n    INNER JOIN DOCTORS dr ON a.attending_doctor_id = dr.doctor_id\n    INNER JOIN DISCHARGES dis ON a.admission_id = dis.admission_id\n    WHERE dis.discharge_status IS NOT NULL\n),\nclass_frequency AS (\n    -- Count how many patients fall into each class per doctor experience level\n    SELECT\n        doctor_experience_level,\n        actual_class,\n        COUNT(*) AS class_count\n    FROM classification_data\n    GROUP BY doctor_experience_level, actual_class\n),\nmax_frequency AS (\n    -- Find the MOST COMMON class = predicted class (classification rule)\n    SELECT\n        doctor_experience_level,\n        MAX(class_count) AS max_count\n    FROM class_frequency\n    GROUP BY doctor_experience_level\n)\n-- Classification Output (Predictor → Class + Accuracy)\nSELECT\n    cd.doctor_experience_level,\n    COUNT(cd.item_id) AS total_training_cases,\n    -- Class distribution counts\n    SUM(CASE WHEN cd.actual_class = 'R' THEN 1 ELSE 0 END) AS count_Recovered_R,\n    SUM(CASE WHEN cd.actual_class = 'T' THEN 1 ELSE 0 END) AS count_Transferred_T,\n    SUM(CASE WHEN cd.actual_class = 'D' THEN 1 ELSE 0 END) AS count_Deceased_D,\n    -- Predicted class (most frequent outcome)\n    cf.actual_class AS predicted_discharge_class,\n    -- Classification accuracy %\n    ROUND((mf.max_count / COUNT(cd.item_id)) * 100, 2) AS prediction_accuracy_pct\nFROM classification_data cd\nINNER JOIN max_frequency mf\n    ON cd.doctor_experience_level = mf.doctor_experience_level\nINNER JOIN class_frequency cf\n    ON cd.doctor_experience_level = cf.doctor_experience_level\n    AND cf.class_count = mf.max_count\nGROUP BY\n    cd.doctor_experience_level,\n    cf.actual_class,\n    mf.max_count\nORDER BY prediction_accuracy_pct DESC;",
+          "result_ref": "table_preview:task7_q1"
+        },
+        {
+          "id": "task7_q2",
+          "title": "Data mining (association) Investigate whether patients with certain allergies tend to have specific types of diagnoses",
+          "sql": "-- 2. Data mining (association) Investigate whether patients with certain allergies tend to have specific types of diagnoses\nWITH total_admission_transactions AS (\n    -- Total transactions (unique admissions = 100% base)\n    SELECT COUNT(DISTINCT admission_id) AS total_unique_trans\n    FROM ADMISSIONS\n),\npatient_allergy_diagnosis AS (\n    -- 1 admission = 1 transaction\n    SELECT\n        a.admission_id,\n        p.allergies AS antecedent_allergy,  -- X\n        a.diagnosis AS consequent_diagnosis  -- Y\n    FROM ADMISSIONS a\n    INNER JOIN PATIENTS p \n        ON a.patient_id = p.patient_id\n    WHERE \n        p.allergies IS NOT NULL \n)\n-- Calculate Association Rules (X -> Y)\nSELECT\n    antecedent_allergy,\n    consequent_diagnosis,\n    COUNT(DISTINCT admission_id) AS transaction_count,\n    -- SUPPORT = % of all transactions that contain BOTH X and Y (0-100%)\n    ROUND(\n        COUNT(DISTINCT admission_id) * 100.0 / (SELECT total_unique_trans FROM total_admission_transactions),\n        2\n    ) AS support_pct,\n    -- CONFIDENCE = % of X cases that also have Y (0-100%)\n    ROUND(\n        COUNT(DISTINCT admission_id) * 100.0 / SUM(COUNT(DISTINCT admission_id)) OVER (PARTITION BY antecedent_allergy),\n        2\n    ) AS confidence_pct\nFROM patient_allergy_diagnosis\nGROUP BY antecedent_allergy, consequent_diagnosis\nHAVING transaction_count >= 3  -- To make sure they are not rare cases\nORDER BY confidence_pct DESC, support_pct DESC;",
+          "result_ref": "table_preview:task7_q2"
+        },
+        {
+          "id": "task7_q3",
+          "title": "Data mining (clustering) Patient Grouping by Age",
+          "sql": "-- 3. Data mining (clustering) Patient Grouping by Age\nWITH patient_age_calculation AS (\n    SELECT\n        p.patient_id,\n        TIMESTAMPDIFF(YEAR, p.birth_date, CURDATE()) AS patient_age\n    FROM PATIENTS p\n),\nage_clusters AS (\n    -- Create clusters\n    SELECT\n        patient_id,\n        patient_age,\n        CASE\n            WHEN patient_age BETWEEN 0 AND 17   THEN 'Cluster 1: Minor (0–17)'\n            WHEN patient_age BETWEEN 18 AND 44 THEN 'Cluster 2: Younger Adult (18–44)'\n            WHEN patient_age BETWEEN 45 AND 64 THEN 'Cluster 3: Middle-Aged (45–64)'\n            WHEN patient_age >= 65             THEN 'Cluster 4: Senior (65+)'\n        END AS age_cluster\n    FROM patient_age_calculation\n)\n-- Show cluster quality\nSELECT\n    age_cluster,\n    COUNT(patient_id) AS total_patients,\n    ROUND(AVG(patient_age), 1) AS cluster_center_avg_age,  -- Center of similar patients\n    MIN(patient_age) AS min_age,                          -- Tight range = HIGH similarity\n    MAX(patient_age) AS max_age,                          -- Tight range = HIGH similarity\n    ROUND(STD(patient_age), 2) AS within_cluster_variation  -- LOW value = HIGH similarity\nFROM age_clusters\nGROUP BY age_cluster\nORDER BY cluster_center_avg_age;",
+          "result_ref": "table_preview:task7_q3"
+        },
+        {
+          "id": "task7_q4",
+          "title": "Regression analysis: length of stay (LOS)",
+          "sql": "-- 4. Regression analysis (out-of-syllabus but I think is of analytical nature) \n-- Predict patient's Length of Stay (LOS)\n-- Regression Equation used: LOS = β₀ + β₁Age + β₂BMI + β₃Severity + β₄Doctor_Exp + β₅Allergies\nWITH\n-- Clean & compute features\nfeature_data AS (\n    SELECT\n        DATEDIFF(d.discharge_date, a.admission_date) AS los,\n        TIMESTAMPDIFF(YEAR, p.birth_date, d.discharge_date) AS age,\n        ROUND(p.weight / POWER(p.height/100, 2), 2) AS bmi,\n        a.diag_severity AS severity,\n        CASE WHEN p.allergies IS NOT NULL AND p.allergies != '' THEN 1 ELSE 0 END AS allergies\n    FROM ADMISSIONS a\n    JOIN PATIENTS p     ON a.patient_id = p.patient_id\n    JOIN DISCHARGES d   ON a.admission_id = d.admission_id\n    WHERE p.height > 0 AND p.weight IS NOT NULL\n),\n-- Precompute aggregates\nregression_agg AS (\n    SELECT\n        COUNT(*) AS n,\n        SUM(los) AS sum_y,          AVG(los) AS avg_y,\n        SUM(age) AS sum_x1,        AVG(age) AS avg_x1,\n        SUM(bmi) AS sum_x2,        AVG(bmi) AS avg_x2,\n        SUM(severity) AS sum_x3,   AVG(severity) AS avg_x3,\n        SUM(allergies) AS sum_x4,  AVG(allergies) AS avg_x4,\n        \n        SUM(age * los) AS sum_x1y,\n        SUM(bmi * los) AS sum_x2y,\n        SUM(severity * los) AS sum_x3y,\n        SUM(allergies * los) AS sum_x4y,\n        \n        SUM(POWER(age,2)) AS sum_x1sq,\n        SUM(POWER(bmi,2)) AS sum_x2sq,\n        SUM(POWER(severity,2)) AS sum_x3sq,\n        SUM(POWER(allergies,2)) AS sum_x4sq\n    FROM feature_data\n)\n-- Regression coefficients\nSELECT\n    n AS total_samples,\n    ROUND( avg_y\n        - avg_x1 * (sum_x1y - sum_x1*avg_y/n) / (sum_x1sq - POW(sum_x1,2)/n)\n        - avg_x2 * (sum_x2y - sum_x2*avg_y/n) / (sum_x2sq - POW(sum_x2,2)/n)\n        - avg_x3 * (sum_x3y - sum_x3*avg_y/n) / (sum_x3sq - POW(sum_x3,2)/n)\n        - avg_x4 * (sum_x4y - sum_x4*avg_y/n) / (sum_x4sq - POW(sum_x4,2)/n),\n    4) AS beta_0_intercept,\n    ROUND((sum_x1y - sum_x1*avg_y/n) / (sum_x1sq - POW(sum_x1,2)/n), 4) AS beta_1_age,\n    ROUND((sum_x2y - sum_x2*avg_y/n) / (sum_x2sq - POW(sum_x2,2)/n), 4) AS beta_2_bmi,\n    ROUND((sum_x3y - sum_x3*avg_y/n) / (sum_x3sq - POW(sum_x3,2)/n), 4) AS beta_3_severity,\n    ROUND((sum_x4y - sum_x4*avg_y/n) / (sum_x4sq - POW(sum_x4,2)/n), 4) AS beta_4_allergies,\n    ROUND(avg_y, 2) AS avg_los\nFROM regression_agg;",
+          "result_ref": "table_preview:task7_q4"
+        }
+      ]
+    }
+  ]
+}

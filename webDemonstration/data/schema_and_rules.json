@@ -1,0 +1,27 @@
+{
+  "create_tables_sql": [
+    "CREATE TABLE PROVINCES (\n  province_id CHAR(2) PRIMARY KEY,\n  province_name VARCHAR(50) NOT NULL UNIQUE\n);\n\n",
+    "CREATE TABLE PATIENT_EMERGENCY_CONTACT (\n  pec_id INT PRIMARY KEY,\n  first_name VARCHAR(30) NOT NULL,\n  last_name VARCHAR(30) NOT NULL,\n  phone VARCHAR(20) NOT NULL\n);\n\n",
+    "CREATE TABLE DOCTOR_EMERGENCY_CONTACT (\n  dec_id INT PRIMARY KEY,\n  first_name VARCHAR(30) NOT NULL,\n  last_name VARCHAR(30) NOT NULL,\n  phone VARCHAR(20) NOT NULL\n);\n\n",
+    "CREATE TABLE PATIENTS (\n  patient_id INT PRIMARY KEY,\n  first_name VARCHAR(30) NOT NULL,\n  last_name VARCHAR(30) NOT NULL,\n  gender CHAR(1) NOT NULL CHECK (gender IN ('M','F','O')),\n  birth_date DATE NOT NULL,\n  city VARCHAR(50) NOT NULL,\n  allergies VARCHAR(200),\n  height DECIMAL(5,2) CHECK (height IS NULL OR (height BETWEEN 40 AND 250)),\n  weight DECIMAL(6,2) CHECK (weight IS NULL OR (weight BETWEEN 2 AND 400)),\n  phone VARCHAR(20) NOT NULL,\n  province_id CHAR(2) NOT NULL,\n  pec_id INT NOT NULL,\n  CONSTRAINT fk_patients_province FOREIGN KEY (province_id) REFERENCES PROVINCES(province_id),\n  CONSTRAINT fk_patients_pec FOREIGN KEY (pec_id) REFERENCES PATIENT_EMERGENCY_CONTACT(pec_id)\n);\n\n",
+    "CREATE TABLE DEPARTMENTS (\n  dept_id INT PRIMARY KEY,\n  dept_name VARCHAR(60) NOT NULL UNIQUE\n);\n\n",
+    "CREATE TABLE DOCTORS (\n  doctor_id INT PRIMARY KEY,\n  first_name VARCHAR(30) NOT NULL,\n  last_name VARCHAR(30) NOT NULL,\n  speciality VARCHAR(80) NOT NULL,\n  years_of_exp INT NOT NULL CHECK (years_of_exp BETWEEN 0 AND 60),\n  phone VARCHAR(20) NOT NULL,\n  dept_id INT NOT NULL,\n  dec_id INT NOT NULL,\n  CONSTRAINT fk_doctors_dept FOREIGN KEY (dept_id) REFERENCES DEPARTMENTS(dept_id),\n  CONSTRAINT fk_doctors_dec FOREIGN KEY (dec_id) REFERENCES DOCTOR_EMERGENCY_CONTACT(dec_id)\n);\n\n",
+    "CREATE TABLE ADMISSIONS (\n  admission_id INT PRIMARY KEY,\n  patient_id INT NOT NULL,\n  attending_doctor_id INT NOT NULL,\n  admission_dept_id INT NOT NULL,\n  admission_date DATE NOT NULL,\n  diagnosis VARCHAR(120) NOT NULL,\n  diag_severity INT NOT NULL CHECK (diag_severity BETWEEN 1 AND 5),\n  CONSTRAINT fk_admissions_patient FOREIGN KEY (patient_id) REFERENCES PATIENTS(patient_id),\n  CONSTRAINT fk_admissions_doctor FOREIGN KEY (attending_doctor_id) REFERENCES DOCTORS(doctor_id),\n  CONSTRAINT fk_admissions_dept FOREIGN KEY (admission_dept_id) REFERENCES DEPARTMENTS(dept_id)\n);\n\n",
+    "CREATE TABLE DISCHARGES (\n  discharge_id INT PRIMARY KEY,\n  admission_id INT NOT NULL UNIQUE,\n  discharge_dept_id INT NOT NULL,\n  discharge_doctor_id INT NOT NULL,\n  discharge_date DATE NOT NULL,\n  discharge_status CHAR(1) NOT NULL CHECK (discharge_status IN ('R','T','D')), -- Recovered/Transferred/Deceased\n  CONSTRAINT fk_discharges_admission FOREIGN KEY (admission_id) REFERENCES ADMISSIONS(admission_id),\n  CONSTRAINT fk_discharges_dept FOREIGN KEY (discharge_dept_id) REFERENCES DEPARTMENTS(dept_id),\n  CONSTRAINT fk_discharges_doctor FOREIGN KEY (discharge_doctor_id) REFERENCES DOCTORS(doctor_id)\n);\n\n",
+    "CREATE TABLE TREATMENT_LOG (\n  log_id INT PRIMARY KEY,\n  admission_id INT NOT NULL,\n  examining_doctor_id INT NOT NULL,\n  to_dept_id INT NOT NULL,\n  exam_result VARCHAR(500) NOT NULL,\n  exam_date DATE NOT NULL,\n  CONSTRAINT fk_treatment_admission FOREIGN KEY (admission_id) REFERENCES ADMISSIONS(admission_id),\n  CONSTRAINT fk_treatment_doctor FOREIGN KEY (examining_doctor_id) REFERENCES DOCTORS(doctor_id),\n  CONSTRAINT fk_treatment_to_dept FOREIGN KEY (to_dept_id) REFERENCES DEPARTMENTS(dept_id)\n);\n\n"
+  ],
+  "trigger_messages": [
+    "Cannot admit: patient already has a deceased (D) discharge",
+    "DISCHARGES.admission_id not found",
+    "DISCHARGES.admission_id not found in ADMISSIONS",
+    "Obstetrics and Gynecology admission dept is only for female patients",
+    "Obstetrics and Gynecology discharge dept is only for female patients",
+    "TREATMENT_LOG.admission_id not found",
+    "Treatment log to OB/GYN only for female patients",
+    "discharge_date must be on or after admission_date",
+    "discharge_dept must match admission_dept when admission has no treatment_log",
+    "exam_date cannot be in the future",
+    "exam_date must be on/after admission_date",
+    "exam_date must be on/before discharge_date"
+  ]
+}

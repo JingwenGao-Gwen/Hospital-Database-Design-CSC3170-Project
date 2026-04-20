@@ -1,0 +1,79 @@
+Source: c:\Users\Lenovo\Desktop\新建文件夹\数据.xlsx
+Rows / fixes: 76
+
+Row 3 admission_id=247 patient=1 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 49 admission_id=446 patient=39 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 53 admission_id=263 patient=45 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 69 admission_id=251 patient=59 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 81 admission_id=244 patient=68 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 105 admission_id=391 patient=87 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 118 admission_id=307 patient=98 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 119 admission_id=496 patient=98 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 125 admission_id=405 patient=103 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 145 admission_id=187 patient=120 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 150 admission_id=476 patient=123 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 160 admission_id=480 patient=129 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 167 admission_id=489 patient=135 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 168 admission_id=223 patient=137 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 169 admission_id=524 patient=137 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 172 admission_id=162 patient=145 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 183 admission_id=317 patient=154 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 196 admission_id=312 patient=164 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 214 admission_id=323 patient=179 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 219 admission_id=406 patient=186 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 295 admission_id=381 patient=251 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 332 admission_id=226 patient=283 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 335 admission_id=93 patient=285 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 361 admission_id=15 patient=310 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 390 admission_id=11 patient=339 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 397 admission_id=203 patient=346 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 405 admission_id=259 patient=353 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 417 admission_id=273 patient=366 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 423 admission_id=208 patient=369 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 434 admission_id=180 patient=377 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 441 admission_id=31 patient=384 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 448 admission_id=367 patient=392 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 451 admission_id=172 patient=393 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 453 admission_id=450 patient=395 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 501 admission_id=482 patient=436 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 520 admission_id=69 patient=456 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 529 admission_id=275 patient=465 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+Row 560 admission_id=435 patient=492 gender=M: admission_dept_id 4-> 1 (non-F in OB/GYN)
+DISCHARGES row 19 discharge_id=18: discharge_dept_id 4-> 1
+DISCHARGES row 22 discharge_id=21: discharge_dept_id 4-> 1
+DISCHARGES row 31 discharge_id=30: discharge_dept_id 4-> 1
+DISCHARGES row 79 discharge_id=78: discharge_dept_id 4-> 1
+DISCHARGES row 93 discharge_id=92: discharge_dept_id 4-> 1
+DISCHARGES row 169 discharge_id=168: discharge_dept_id 4-> 1
+DISCHARGES row 175 discharge_id=174: discharge_dept_id 4-> 1
+DISCHARGES row 180 discharge_id=179: discharge_dept_id 4-> 1
+DISCHARGES row 181 discharge_id=180: discharge_dept_id 4-> 1
+DISCHARGES row 202 discharge_id=201: discharge_dept_id 4-> 1
+DISCHARGES row 206 discharge_id=205: discharge_dept_id 4-> 1
+DISCHARGES row 218 discharge_id=217: discharge_dept_id 4-> 1
+DISCHARGES row 222 discharge_id=221: discharge_dept_id 4-> 1
+DISCHARGES row 240 discharge_id=239: discharge_dept_id 4-> 1
+DISCHARGES row 243 discharge_id=242: discharge_dept_id 4-> 1
+DISCHARGES row 256 discharge_id=255: discharge_dept_id 4-> 1
+DISCHARGES row 260 discharge_id=259: discharge_dept_id 4-> 1
+DISCHARGES row 269 discharge_id=268: discharge_dept_id 4-> 1
+DISCHARGES row 270 discharge_id=269: discharge_dept_id 4-> 1
+DISCHARGES row 272 discharge_id=271: discharge_dept_id 4-> 1
+DISCHARGES row 313 discharge_id=312: discharge_dept_id 4-> 1
+DISCHARGES row 316 discharge_id=315: discharge_dept_id 4-> 1
+DISCHARGES row 319 discharge_id=318: discharge_dept_id 4-> 1
+DISCHARGES row 328 discharge_id=327: discharge_dept_id 4-> 1
+DISCHARGES row 357 discharge_id=356: discharge_dept_id 4-> 1
+DISCHARGES row 382 discharge_id=381: discharge_dept_id 4-> 1
+DISCHARGES row 390 discharge_id=389: discharge_dept_id 4-> 1
+DISCHARGES row 409 discharge_id=408: discharge_dept_id 4-> 1
+DISCHARGES row 410 discharge_id=409: discharge_dept_id 4-> 1
+DISCHARGES row 439 discharge_id=438: discharge_dept_id 4-> 1
+DISCHARGES row 445 discharge_id=444: discharge_dept_id 4-> 1
+DISCHARGES row 459 discharge_id=458: discharge_dept_id 4-> 1
+DISCHARGES row 475 discharge_id=474: discharge_dept_id 4-> 1
+DISCHARGES row 482 discharge_id=481: discharge_dept_id 4-> 1
+DISCHARGES row 487 discharge_id=486: discharge_dept_id 4-> 1
+DISCHARGES row 491 discharge_id=490: discharge_dept_id 4-> 1
+DISCHARGES row 500 discharge_id=499: discharge_dept_id 4-> 1
+DISCHARGES row 526 discharge_id=525: discharge_dept_id 4-> 1

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hospital DB — Relational Schema (tabular style)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      margin: 24px;
+      background: #fff;
+      color: #111;
+    }
+    h1 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    p.note {
+      font-size: 0.85rem;
+      color: #444;
+      max-width: 900px;
+      margin-bottom: 24px;
+      line-height: 1.45;
+    }
+    .schema { max-width: 1200px; }
+    .rel-table {
+      margin-bottom: 32px;
+      page-break-inside: avoid;
+    }
+    .rel-name {
+      font-weight: bold;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+    .attr-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 0;
+    }
+    .attr {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+    .fk-above {
+      font-size: 11px;
+      font-weight: 600;
+      min-height: 16px;
+      line-height: 16px;
+      color: #222;
+    }
+    .fk-above:empty { min-height: 16px; }
+    .box {
+      background: #d0d0d0;
+      border: 1px solid #888;
+      padding: 10px 14px;
+      min-width: 56px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .pk-text {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .pk-below {
+      font-size: 11px;
+      font-weight: 600;
+      min-height: 16px;
+      line-height: 16px;
+      margin-top: 2px;
+      color: #222;
+    }
+    .pk-below:empty { min-height: 16px; }
+    .composite {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .composite-inner {
+      display: flex;
+      border-bottom: 2px solid #000;
+      padding-bottom: 2px;
+    }
+    .composite .pk-below {
+      text-align: center;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>医院数据库 — 关系模式（表格式，与 COMPANY 示例风格一致）</h1>
+  <p class="note">
+    本图表示<strong>关系模式</strong>：列出各关系的属性列，主键（P.K.）标在属性名下方并加下划线，
+    外键（F.K.）标在属性名上方。可与概念层的 ER 图并列放入报告：ER 侧重实体与联系，本图侧重实现用的表结构。
+  </p>
+
+  <div class="schema">
+
+    <!-- PROVINCES -->
+    <div class="rel-table">
+      <div class="rel-name">PROVINCES</div>
+      <div class="attr-row">
+        <div class="attr">
+          <div class="fk-above"></div>
+          <div class="box"><span class="pk-text">province_id</span></div>
+          <div class="pk-below">P.K.</div>
+        </div>
+        <div class="attr">
+          <div class="fk-above"></div>
+          <div class="box">province_name</div>
+          <div class="pk-below"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PATIENT_EMERGENCY_CONTACT -->
+    <div class="rel-table">
+      <div class="rel-name">PATIENT_EMERGENCY_CONTACT</div>
+      <div class="attr-row">
+        <div class="attr">
+          <div class="fk-above"></div>
+          <div class="box"><span class="pk-text">pec_id</span></div>
+          <div class="pk-below">P.K.</div>
+        </div>
+        <div class="attr"><div class="fk-above"></div><div class="box">first_name</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">last_name</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">phone</div><div class="pk-below"></div></div>
+      </div>
+    </div>
+
+    <!-- DOCTOR_EMERGENCY_CONTACT -->
+    <div class="rel-table">
+      <div class="rel-name">DOCTOR_EMERGENCY_CONTACT</div>
+      <div class="attr-row">
+        <div class="attr">
+          <div class="fk-above"></div>
+          <div class="box"><span class="pk-text">dec_id</span></div>
+          <div class="pk-below">P.K.</div>
+        </div>
+        <div class="attr"><div class="fk-above"></div><div class="box">first_name</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">last_name</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">phone</div><div class="pk-below"></div></div>
+      </div>
+    </div>
+
+    <!-- PATIENTS -->
+    <div class="rel-table">
+      <div class="rel-name">PATIENTS</div>
+      <div class="attr-row">
+        <div class="attr">
+          <div class="fk-above"></div>
+          <div class="box"><span class="pk-text">patient_id</span></div>
+          <div class="pk-below">P.K.</div>
+        </div>
+        <div class="attr"><div class="fk-above"></div><div class="box">first_name</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">last_name</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">gender</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">birth_date</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">city</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">allergies</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">height</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">weight</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">phone</div><div class="pk-below"></div></div>
+        <div class="attr">
+          <div class="fk-above">F.K.</div>
+          <div class="box">province_id</div>
+          <div class="pk-below"></div>
+        </div>
+        <div class="attr">
+          <div class="fk-above">F.K.</div>
+          <div class="box">pec_id</div>
+          <div class="pk-below"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEPARTMENTS -->
+    <div class="rel-table">
+      <div class="rel-name">DEPARTMENTS</div>
+      <div class="attr-row">
+        <div class="attr">
+          <div class="fk-above"></div>
+          <div class="box"><span class="pk-text">dept_id</span></div>
+          <div class="pk-below">P.K.</div>
+        </div>
+        <div class="attr"><div class="fk-above"></div><div class="box">dept_name</div><div class="pk-below"></div></div>
+      </div>
+    </div>
+
+    <!-- DOCTORS -->
+    <div class="rel-table">
+      <div class="rel-name">DOCTORS</div>
+      <div class="attr-row">
+        <div class="attr">
+          <div class="fk-above"></div>
+          <div class="box"><span class="pk-text">doctor_id</span></div>
+          <div class="pk-below">P.K.</div>
+        </div>
+        <div class="attr"><div class="fk-above"></div><div class="box">first_name</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">last_name</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">speciality</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">years_of_exp</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">phone</div><div class="pk-below"></div></div>
+        <div class="attr">
+          <div class="fk-above">F.K.</div>
+          <div class="box">dept_id</div>
+          <div class="pk-below"></div>
+        </div>
+        <div class="attr">
+          <div class="fk-above">F.K.</div>
+          <div class="box">dec_id</div>
+          <div class="pk-below"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMISSIONS -->
+    <div class="rel-table">
+      <div class="rel-name">ADMISSIONS</div>
+      <div class="attr-row">
+        <div class="attr">
+          <div class="fk-above"></div>
+          <div class="box"><span class="pk-text">admission_id</span></div>
+          <div class="pk-below">P.K.</div>
+        </div>
+        <div class="attr">
+          <div class="fk-above">F.K.</div>
+          <div class="box">patient_id</div>
+          <div class="pk-below"></div>
+        </div>
+        <div class="attr">
+          <div class="fk-above">F.K.</div>
+          <div class="box">attending_doctor_id</div>
+          <div class="pk-below"></div>
+        </div>
+        <div class="attr">
+          <div class="fk-above">F.K.</div>
+          <div class="box">admission_dept_id</div>
+          <div class="pk-below"></div>
+        </div>
+        <div class="attr"><div class="fk-above"></div><div class="box">admission_date</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">diagnosis</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">diag_severity</div><div class="pk-below"></div></div>
+      </div>
+    </div>
+
+    <!-- DISCHARGES -->
+    <div class="rel-table">
+      <div class="rel-name">DISCHARGES</div>
+      <div class="attr-row">
+        <div class="attr">
+          <div class="fk-above"></div>
+          <div class="box"><span class="pk-text">discharge_id</span></div>
+          <div class="pk-below">P.K.</div>
+        </div>
+        <div class="attr">
+          <div class="fk-above">F.K.</div>
+          <div class="box">admission_id</div>
+          <div class="pk-below"></div>
+        </div>
+        <div class="attr">
+          <div class="fk-above">F.K.</div>
+          <div class="box">discharge_dept_id</div>
+          <div class="pk-below"></div>
+        </div>
+        <div class="attr">
+          <div class="fk-above">F.K.</div>
+          <div class="box">discharge_doctor_id</div>
+          <div class="pk-below"></div>
+        </div>
+        <div class="attr"><div class="fk-above"></div><div class="box">discharge_date</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">discharge_status</div><div class="pk-below"></div></div>
+      </div>
+    </div>
+
+    <!-- TREATMENT_LOG -->
+    <div class="rel-table">
+      <div class="rel-name">TREATMENT_LOG</div>
+      <div class="attr-row">
+        <div class="attr">
+          <div class="fk-above"></div>
+          <div class="box"><span class="pk-text">log_id</span></div>
+          <div class="pk-below">P.K.</div>
+        </div>
+        <div class="attr">
+          <div class="fk-above">F.K.</div>
+          <div class="box">admission_id</div>
+          <div class="pk-below"></div>
+        </div>
+        <div class="attr">
+          <div class="fk-above">F.K.</div>
+          <div class="box">examining_doctor_id</div>
+          <div class="pk-below"></div>
+        </div>
+        <div class="attr">
+          <div class="fk-above">F.K.</div>
+          <div class="box">to_dept_id</div>
+          <div class="pk-below"></div>
+        </div>
+        <div class="attr"><div class="fk-above"></div><div class="box">exam_result</div><div class="pk-below"></div></div>
+        <div class="attr"><div class="fk-above"></div><div class="box">exam_date</div><div class="pk-below"></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="note">
+    参照完整性：province_id → PROVINCES；pec_id → PATIENT_EMERGENCY_CONTACT；dec_id → DOCTOR_EMERGENCY_CONTACT；
+    dept_id（DOCTORS）→ DEPARTMENTS；ADMISSIONS.patient_id → PATIENTS；attending_doctor_id / examining_doctor_id / discharge_doctor_id → DOCTORS；
+    admission_dept_id / discharge_dept_id / to_dept_id → DEPARTMENTS；DISCHARGES.admission_id 与 TREATMENT_LOG.admission_id → ADMISSIONS（病人由入院行推出，表中不另存 patient_id）。
+    DISCHARGES.admission_id 在已出院时指向对应 ADMISSIONS；未出院则无 DISCHARGES 行。若要求「每次入院至多一条出院」，
+    可对 admission_id 加 UNIQUE（0 或 1 条出院记录）。
+  </p>
+</body>
+</html>

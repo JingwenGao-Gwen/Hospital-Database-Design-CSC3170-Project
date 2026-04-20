@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+.venv/
+venv/
+env/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Excel temp lock files (keep 数据.xlsx if you commit it)
+~$*.xlsx
+
+# Optional: uncomment if you do not want to version the raw Excel
+# 数据.xlsx
