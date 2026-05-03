@@ -77,6 +77,7 @@ python webDemonstration/refresh_embedded_html.py
 
 `refresh_embedded_html.py` re-embeds JSON into `webDemonstration.html` for offline `file://` use.
 
+Where task 6&7 web demonstration was demonstrated by Zhang Su and Chung Yi CHEUNG.
 ## Project structure (overview)
 
 ```
