@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shenzhen Central Hospital - Clinical Information System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chosen Palette: Clinical Blue & Clean Neutral -->
+    <!-- Application Structure Plan: 
+        Adopted a standard medical backend dashboard architecture with "sidebar navigation + main content area".
+        1. Dashboard: Integrate Query 2 (patient province origin) and Query 5 (high-frequency attending physicians) to provide management and head nurses with macro medical resource allocation and patient source profiling.
+        2. Patient Directory: Integrate Query 1 (basic info, emergency contacts, allergy history) and Query 3 (admission/discharge status), enabling rapid patient lookup and safety alerts (red-highlighted allergies) for doctors and nurses.
+        3. Transfer Logs: Corresponds to Query 4, displaying in-hospital cross-department transfer records in timeline/list view to support cross-department collaboration and medical course tracking.
+        4. Physician Experience Outcomes: New view for Task 7 Query 1, analyzing discharge outcome prediction based on physician experience level.
+        5. LOS Regression Analysis: New view for Task 7 Query 4, predicting Length of Stay using linear regression with Age, BMI, Severity, and Allergies.
+        This structure breaks the isolation of original SQL queries, reorganizing data by "macro statistics, individual patient records, dynamic patient flow, and clinical outcomes" for enhanced clinical logic and usability.
+    -->
+    <!-- Visualization & Content Choices: 
+        - Query 2 (Province Statistics) -> Goal: Comparison -> Horizontal Bar Chart (Chart.js). Intuitively display major patient origins to support medical resource allocation.
+        - Query 5 (Physician Workload) -> Goal: Ranking -> Doughnut Chart (Chart.js). Show consultation proportion of top 3 physicians.
+        - Query 1 & 3 (Patient & Admission Flow) -> Goal: Information Retrieval -> Dynamic Data Table (HTML+JS). Support name search and allergy highlighting for quick emergency contact access.
+        - Query 4 (Transfer Records) -> Goal: Dynamic Tracking -> Status Card List (HTML+Tailwind). Display diagnosis and timestamp for patient inter-department transfers.
+        - Task 7 Query 1 (Classification) -> Goal: Outcome Prediction -> Bar + Accuracy Line Chart (Chart.js). Compare discharge outcomes and prediction accuracy across experience levels.
+        - Task 7 Query 4 (Regression) -> Goal: LOS Prediction -> Coefficient Bar Chart + Interactive Calculator. Visualize feature impact and allow user input for prediction.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. All icons are Unicode.
+    -->
+
+    <style>
+        /* Core chart container style constraints */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Limit maximum width to prevent over-stretching */
+            margin-left: auto;
+            margin-right: auto;
+            height: 30vh; /* Responsive height */
+            min-height: 250px;
+            max-height: 350px; /* Limit maximum height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Hide scrollbar while retaining scroll functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Prevent horizontal page overflow from wide tables */
+        .table-wrapper {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        /* Number input styling */
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+    </style>
+</head>
+<body class="bg-blue-50 text-slate-800 font-sans antialiased flex h-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <nav class="w-64 bg-blue-800 text-white flex flex-col transition-all duration-300 hidden md:flex z-20 shadow-xl">
+        <div class="p-6 flex items-center space-x-3 border-b border-blue-700">
+            <span class="text-3xl">🏥</span>
+            <div>
+                <h1 class="text-lg font-bold tracking-wider">Shenzhen Central Hospital</h1>
+                <p class="text-xs text-blue-200">Clinical Information System (SIMS)</p>
+            </div>
+        </div>
+        <div class="flex-1 py-6 px-4 space-y-2">
+            <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 bg-blue-700 rounded-lg text-left transition-colors font-medium">
+                <span>📊</span> <span>Dashboard</span>
+            </button>
+            <button onclick="switchView('patients')" id="nav-patients" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 hover:bg-blue-700 rounded-lg text-left transition-colors text-blue-200">
+                <span>👥</span> <span>Patient Records</span>
+            </button>
+            <button onclick="switchView('transfers')" id="nav-transfers" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 hover:bg-blue-700 rounded-lg text-left transition-colors text-blue-200">
+                <span>🔄</span> <span>Transfer Logs</span>
+            </button>
+            <!-- Button for Task 7 Query 1 Classification -->
+            <button onclick="switchView('experience-outcomes')" id="nav-experience-outcomes" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 hover:bg-blue-700 rounded-lg text-left transition-colors text-blue-200">
+                <span>📈</span> <span>Patient Status Prediction</span>
+            </button>
+            <!-- NEW Button for Task 7 Query 4 Regression (LOS) -->
+            <button onclick="switchView('los-regression')" id="nav-los-regression" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 hover:bg-blue-700 rounded-lg text-left transition-colors text-blue-200">
+                <span>📐</span> <span>Patient Duration of Stay Calculator</span>
+            </button>
+        </div>
+        <div class="p-4 text-xs text-blue-300 border-t border-blue-700">
+            <p>Built for CSC3170 Database Course</p>
+            <p>Data Source: Task 6 & 7 SQL Queries</p>
+        </div>
+    </nav>
+
+    <!-- Mobile Top Navigation (Mobile Only) -->
+    <div class="md:hidden fixed top-0 left-0 right-0 bg-blue-800 text-white p-4 flex justify-between items-center z-30 shadow-md">
+        <div class="flex items-center space-x-2">
+            <span>🏥</span>
+            <span class="font-bold">SIMS Mobile</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button type="button" onclick="window.location.href='webDemonstration/webDemonstration.html?portal=1'" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-blue-300 bg-blue-700 text-white hover:bg-blue-600 transition-colors">Engineer</button>
+            <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="text-2xl leading-none" aria-label="Open menu">☰</button>
+        </div>
+    </div>
+    
+    <!-- Mobile Dropdown Menu -->
+    <div id="mobile-menu" class="hidden fixed top-14 left-0 right-0 bg-blue-700 text-white z-20 flex flex-col shadow-lg md:hidden">
+        <button onclick="switchView('dashboard'); this.parentElement.classList.add('hidden')" class="px-6 py-4 border-b border-blue-600 text-left">📊 Hospital Overview Dashboard</button>
+        <button onclick="switchView('patients'); this.parentElement.classList.add('hidden')" class="px-6 py-4 border-b border-blue-600 text-left">👥 In-House Patient Directory</button>
+        <button onclick="switchView('transfers'); this.parentElement.classList.add('hidden')" class="px-6 py-4 border-b border-blue-600 text-left">🔄 Cross-Department Transfer Records</button>
+        <button onclick="switchView('experience-outcomes'); this.parentElement.classList.add('hidden')" class="px-6 py-4 border-b border-blue-600 text-left">📈 Physician Experience Outcomes</button>
+        <button onclick="switchView('los-regression'); this.parentElement.classList.add('hidden')" class="px-6 py-4 text-left">📐 Patient LOS Calculator</button>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden pt-14 md:pt-0">
+        <!-- Top Toolbar Header -->
+        <header class="bg-white shadow-sm px-4 sm:px-8 py-4 flex justify-between items-center z-10 border-b border-blue-100 gap-4">
+            <h2 id="current-view-title" class="text-xl sm:text-2xl font-bold text-blue-900 truncate min-w-0">Dashboard</h2>
+            <div class="flex items-center space-x-3 sm:space-x-4 shrink-0">
+                <button type="button" onclick="window.location.href='webDemonstration/webDemonstration.html?portal=1'" class="px-3 sm:px-4 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-900 text-xs sm:text-sm font-semibold hover:bg-blue-100 transition-colors whitespace-nowrap">Engineer</button>
+                <span class="text-sm text-blue-700 hidden lg:inline">Current User: Attending Physician</span>
+                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold border border-blue-300">
+                    👨‍⚕️
+                </div>
+            </div>
+        </header>
+
+        <!-- View Container: Scrollable Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 bg-blue-50 no-scrollbar" id="main-scroll-area">
+            
+            <!-- View 1: Dashboard -->
+            <div id="view-dashboard" class="space-y-6 animate-fade-in block">
+                <p class="text-slate-600 mb-6 bg-white p-4 rounded-lg shadow-sm border border-blue-100">
+                    💡 <strong>Overview:</strong> This page consolidates high-level analytics from patient demographic data and physician consultation logs. It helps hospital administrators analyze geographic patient distribution (to support cross-provincial medical insurance settlement planning) and identify high-workload core clinical physicians (based on Task 6, Queries 2 & 5).
+                </p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Chart Card 1: Patient Origin by Province -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-blue-100 flex flex-col">
+                        <h3 class="text-lg font-bold text-blue-900 mb-2 flex items-center">
+                            <span>📍 Top 5 Provinces by Patient Origin</span>
+                        </h3>
+                        <p class="text-sm text-blue-600 mb-4">Statistics based on patient permanent residence data (Query 2)</p>
+                        <div class="flex-1 flex items-center justify-center">
+                            <div class="chart-container">
+                                <canvas id="provinceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart Card 2: Core Physician Workload -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-blue-100 flex flex-col">
+                        <h3 class="text-lg font-bold text-blue-900 mb-2 flex items-center">
+                            <span>👨‍⚕️ Top 3 Attending Physicians by Patient Volume</span>
+                        </h3>
+                        <p class="text-sm text-blue-600 mb-4">Ranked by historical inpatient admission case volume (Query 5)</p>
+                        <div class="flex-1 flex items-center justify-center">
+                            <div class="chart-container">
+                                <canvas id="doctorChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Stat Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div class="bg-blue-100 border border-blue-200 p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-blue-700 font-semibold">Current Inpatient Count</p>
+                            <p class="text-2xl font-bold text-blue-900 mt-1">1,248</p>
+                        </div>
+                        <span class="text-3xl opacity-50">🏥</span>
+                    </div>
+                    <div class="bg-blue-100 border border-blue-200 p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-blue-700 font-semibold">Scheduled Weekly Discharges</p>
+                            <p class="text-2xl font-bold text-blue-900 mt-1">312</p>
+                        </div>
+                        <span class="text-3xl opacity-50">🏠</span>
+                    </div>
+                    <div class="bg-blue-100 border border-blue-200 p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-blue-700 font-semibold">Active Inter-Department Transfers</p>
+                            <p class="text-2xl font-bold text-blue-900 mt-1">15</p>
+                        </div>
+                        <span class="text-3xl opacity-50">🚑</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View 2: Patient Records Directory -->
+            <div id="view-patients" class="space-y-6 hidden animate-fade-in">
+                <p class="text-slate-600 mb-4 bg-white p-4 rounded-lg shadow-sm border border-blue-100">
+                    💡 <strong>Clinical Workbench:</strong> Dedicated patient management interface for nurses and on-duty physicians. Combines core patient profiles, critical allergy warnings, emergency contact information (Query 1), and real-time admission/discharge status (Query 3). The search bar supports fast filtering by patient full name.
+                </p>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6 space-y-4 md:space-y-0">
+                        <h3 class="text-lg font-bold text-blue-900">Current & Recently Discharged Patient List</h3>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-400">🔍</span>
+                            <input type="text" id="patientSearch" placeholder="Search patient name..." class="pl-10 pr-4 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full md:w-64" onkeyup="filterPatients()">
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table class="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                                <tr class="bg-blue-50 text-blue-700 text-sm uppercase tracking-wider border-b border-blue-200">
+                                    <th class="p-3 font-semibold rounded-tl-lg">Full Name</th>
+                                    <th class="p-3 font-semibold">Admission Date</th>
+                                    <th class="p-3 font-semibold">Patient Status</th>
+                                    <th class="p-3 font-semibold">Emergency Contact</th>
+                                    <th class="p-3 font-semibold">Contact Phone</th>
+                                    <th class="p-3 font-semibold rounded-tr-lg">Allergy Warnings</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patient-table-body" class="text-sm divide-y divide-blue-100">
+                                <!-- Dynamically populated via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View 3: Transfer Logs -->
+            <div id="view-transfers" class="space-y-6 hidden animate-fade-in">
+                <p class="text-slate-600 mb-4 bg-white p-4 rounded-lg shadow-sm border border-blue-100">
+                    💡 <strong>Cross-Department Transfer Monitoring:</strong> Data extracted from the `TREATMENT_LOG` dataset (Query 4). Tracks complete in-hospital patient transfer histories, including handoffs from emergency departments or general wards to specialized units. Critical for monitoring complex condition progression and clarifying inter-department care handover responsibilities.
+                </p>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+                    <h3 class="text-lg font-bold text-blue-900 mb-6">Recent In-Hospital Transfer Records (Top 5)</h3>
+                    
+                    <div class="relative border-l-2 border-blue-400 ml-4 space-y-8" id="transfer-timeline">
+                        <!-- Dynamically populated via JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- View 4: Physician Experience vs. Discharge Outcomes (Task 7 Query 1) - SIMPLIFIED TABLE -->
+            <div id="view-experience-outcomes" class="space-y-6 hidden animate-fade-in">
+                <p class="text-slate-600 mb-4 bg-white p-4 rounded-lg shadow-sm border border-blue-100">
+                    💡 <strong>Task 7 Classification Analysis:</strong> This query evaluates whether physician experience level can predict patient discharge outcomes. Doctors are grouped into three tiers (Junior/Intermediate/Senior). For each tier, the majority outcome becomes the prediction rule.
+                </p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Table Card: Physician Experience Outcomes - SIMPLIFIED (3 columns only) -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-blue-100 flex flex-col">
+                        <h3 class="text-lg font-bold text-blue-900 mb-4">📊 Classification Results: Experience Level → Discharge Prediction</h3>
+                        <div class="table-wrapper">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-blue-50 text-blue-700 text-sm uppercase tracking-wider border-b border-blue-200">
+                                        <th class="p-3 font-semibold rounded-tl-lg">Experience Level</th>
+                                        <th class="p-3 font-semibold">Predicted Outcome</th>
+                                        <th class="p-3 font-semibold rounded-tr-lg">Accuracy (%)</th>
+                                     </tr>
+                                </thead>
+                                <tbody id="experience-outcomes-table" class="text-sm divide-y divide-blue-100">
+                                    <!-- Dynamically populated via JavaScript -->
+                                </tbody>
+                             </table>
+                        </div>
+                        <p class="text-xs text-blue-500 mt-4 text-center">
+                            <strong>Interpretation:</strong> R = Recovered | T = Transferred | D = Deceased
+                        </p>
+                    </div>
+
+                    <!-- Chart Card: Outcome Distribution & Accuracy -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-blue-100 flex flex-col">
+                        <h3 class="text-lg font-bold text-blue-900 mb-4">📈 Outcome Distribution by Experience Level</h3>
+                        <div class="flex-1 flex items-center justify-center">
+                            <div class="chart-container">
+                                <canvas id="experienceOutcomesChart"></canvas>
+                            </div>
+                        </div>
+                        <p class="text-xs text-blue-500 text-center mt-2">
+                            Accuracy values shown on tooltip when hovering over each bar group
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View 5: LOS Regression Analysis (Task 7 Query 4) -->
+            <div id="view-los-regression" class="space-y-6 hidden animate-fade-in">
+                <p class="text-slate-600 mb-4 bg-white p-4 rounded-lg shadow-sm border border-blue-100">
+                    💡 <strong>Task 7 Regression Analysis - Length of Stay (LOS) Prediction:</strong> Using linear regression, we model hospital stay duration based on patient characteristics. 
+                    <br><strong>Formula:</strong> <code class="bg-blue-50 px-2 py-1 rounded">LOS = β₀ + β₁·Age + β₂·BMI + β₃·Severity + β₄·Allergies</code>
+                    <br><strong>Interpretation:</strong> Severity has the strongest positive impact on LOS (+2.45 days per severity level). Allergies show a slight negative coefficient (patients with allergies tend to have shorter stays in this model).
+                </p>
+
+                <!-- <div class="grid grid-cols-1 lg:grid-cols-2 gap-6"> -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-blue-100">
+                    <!-- Interactive Calculator Card -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-blue-100 flex flex-col">
+                        <h3 class="text-lg font-bold text-blue-900 mb-4">🧮 LOS Prediction Calculator</h3>
+                        <p class="text-sm text-blue-600 mb-4">Enter patient characteristics to predict hospital stay duration</p>
+                        
+                        <div class="space-y-4">
+                            <!-- Age Input -->
+                            <div>
+                                <label class="block text-sm font-medium text-blue-800 mb-1">Age (years)</label>
+                                <input type="number" id="ageInput" value="65" step="1" min="0" max="120" class="w-full px-4 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            
+                            <!-- BMI Input -->
+                            <div>
+                                <label class="block text-sm font-medium text-blue-800 mb-1">BMI (kg/m²)</label>
+                                <input type="number" id="bmiInput" value="24.5" step="0.5" min="10" max="50" class="w-full px-4 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            
+                            <!-- Severity Input (1-10) -->
+                            <div>
+                                <label class="block text-sm font-medium text-blue-800 mb-1">Diagnosis Severity (1-10)</label>
+                                <input type="range" id="severitySlider" min="1" max="10" step="1" value="3" class="w-full">
+                                <div class="flex justify-between text-xs text-blue-600 mt-1">
+                                    <span>Mild (1)</span>
+                                    <span id="severityValue" class="font-bold text-blue-800">3</span>
+                                    <span>Severe (10)</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Allergies Toggle -->
+                            <div>
+                                <label class="block text-sm font-medium text-blue-800 mb-2">Has Allergies?</label>
+                                <div class="flex gap-4">
+                                    <label class="flex items-center gap-2">
+                                        <input type="radio" name="allergyRadio" value="yes" class="w-4 h-4 text-blue-600"> 
+                                        <span>Yes</span>
+                                    </label>
+                                    <label class="flex items-center gap-2">
+                                        <input type="radio" name="allergyRadio" value="no" checked class="w-4 h-4 text-blue-600"> 
+                                        <span>No</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Prediction Result -->
+                            <div class="mt-6 pt-4 border-t border-blue-100">
+                                <div class="bg-blue-50 rounded-lg p-4 text-center">
+                                    <p class="text-sm text-blue-600 mb-1">Predicted Length of Stay</p>
+                                    <p class="text-3xl font-bold text-blue-800" id="losPrediction">--.--</p>
+                                    <p class="text-xs text-blue-500 mt-1">days</p>
+                                </div>
+                                <p class="text-xs text-blue-400 text-center mt-2">
+                                    Formula: LOS = -2.63 + 0.0028·Age + 0.0118·BMI + 2.4469·Severity - 0.0225·Allergies(1=yes)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Model Summary Card -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-blue-100">
+                    <h3 class="text-md font-bold text-blue-900 mb-3">📋 Regression Model Summary</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+                        <div class="bg-blue-50 p-2 rounded text-center">
+                            <p class="text-blue-500 text-xs">Total Samples</p>
+                            <p class="font-bold text-blue-800">567</p>
+                        </div>
+                        <div class="bg-blue-50 p-2 rounded text-center">
+                            <p class="text-blue-500 text-xs">Mean LOS</p>
+                            <p class="font-bold text-blue-800">4.41 days</p>
+                        </div>
+                        <div class="bg-blue-50 p-2 rounded text-center">
+                            <p class="text-blue-500 text-xs">Age Coefficient (β₁)</p>
+                            <p class="font-bold text-blue-800">+0.0028</p>
+                        </div>
+                        <div class="bg-blue-50 p-2 rounded text-center">
+                            <p class="text-blue-500 text-xs">BMI Coefficient (β₂)</p>
+                            <p class="font-bold text-blue-800">+0.0118</p>
+                        </div>
+                        <div class="bg-blue-50 p-2 rounded text-center">
+                            <p class="text-blue-500 text-xs">Severity Coefficient (β₃)</p>
+                            <p class="font-bold text-blue-800">+2.4469</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-blue-400 mt-3 text-center">
+                        <strong>Clinical Insight:</strong> Severity is the dominant predictor of LOS. Each 1-point increase in severity adds ~2.45 days to hospital stay.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        /* ================================================================
+           REGRESSION COEFFICIENTS (from Task 7 Query 4 SQL Result)
+           ================================================================ */
+        const REGRESSION_COEFF = {
+            total_samples: 567,
+            beta_0_intercept: -2.6277,
+            beta_1_age: 0.0028,
+            beta_2_bmi: 0.0118,
+            beta_3_severity: 2.4469,
+            beta_4_allergies: -0.0225,  // Allergies = 1 for Yes, 0 for No
+            avg_los: 4.41
+        };
+
+        // Mock backend SQL query return data (Mapped from task_6_queries.sql)
+        
+        // Combined Data for Query 1 & 3 (Patient Info, Emergency Contacts, Admission/Discharge Status)
+        const patientData = [
+            { firstName: "Wei", lastName: "Zhang", admissionDate: "2026-04-20", dischargeDate: "-", status: "Inpatient", contactName: "Jianguo Zhang", contactPhone: "138-0000-1111", allergies: "Penicillin" },
+            { firstName: "Fang", lastName: "Li", admissionDate: "2026-04-18", dischargeDate: "2026-04-25", status: "Scheduled Discharge", contactName: "Qiang Wang", contactPhone: "139-2222-3333", allergies: "None" },
+            { firstName: "Ming", lastName: "Wang", admissionDate: "2026-04-26", dischargeDate: "-", status: "Inpatient", contactName: "Xiuying Wang", contactPhone: "137-4444-5555", allergies: "Seafood" },
+            { firstName: "Xiuying", lastName: "Liu", admissionDate: "2026-04-15", dischargeDate: "2026-04-22", status: "Scheduled Discharge", contactName: "Gang Zhao", contactPhone: "136-6666-7777", allergies: "Aspirin" },
+            { firstName: "Qiang", lastName: "Chen", admissionDate: "2026-04-27", dischargeDate: "-", status: "Inpatient", contactName: "Xiaomin Chen", contactPhone: "135-8888-9999", allergies: "None" }
+        ];
+
+        // Data for Query 2 (Top 5 Patient Origin Provinces)
+        const provinceData = {
+            labels: ['Guangdong', 'Hunan', 'Jiangxi', 'Fujian', 'Guangxi Zhuang Autonomous Region'],
+            counts: [1850, 420, 310, 180, 150]
+        };
+
+        // Data for Query 4 (Inter-Department Transfers from Treatment Log)
+        const transferData = [
+            { lastName: "Zhang", diagnosis: "Acute Myocardial Infarction", transferDate: "2026-04-21 09:30", toDept: "Cardiology Department" },
+            { lastName: "Li", diagnosis: "Multiple Fractures", transferDate: "2026-04-19 14:15", toDept: "Orthopedics Department" },
+            { lastName: "Wang", diagnosis: "Severe Pneumonia", transferDate: "2026-04-26 23:00", toDept: "Respiratory Medicine Department" },
+            { lastName: "Liu", diagnosis: "Stroke", transferDate: "2026-04-16 08:45", toDept: "Neurology Department" },
+            { lastName: "Zhao", diagnosis: "Acute Appendicitis", transferDate: "2026-04-27 10:20", toDept: "General Surgery Department" }
+        ];
+
+        // Data for Query 5 (Top 3 High-Volume Attending Physicians)
+        const doctorData = {
+            labels: ['Dr. Chen (Cardiology)', 'Dr. Lin (Neurology)', 'Dr. Wu (Emergency Department)'],
+            counts: [142, 115, 98]
+        };
+
+        // New Data for Task 7 Query 1: Physician Experience vs. Discharge Outcomes
+        const physicianOutcomesData = [
+            {
+                doctor_experience_level: "Senior",
+                total_training_cases: 201,
+                count_Recovered_R: 187,
+                count_Transferred_T: 11,
+                count_Deceased_D: 3,
+                predicted_discharge_class: "R",
+                prediction_accuracy_pct: 93.03
+            },
+            {
+                doctor_experience_level: "Intermediate",
+                total_training_cases: 299,
+                count_Recovered_R: 275,
+                count_Transferred_T: 20,
+                count_Deceased_D: 4,
+                predicted_discharge_class: "R",
+                prediction_accuracy_pct: 91.97
+            },
+            {
+                doctor_experience_level: "Junior",
+                total_training_cases: 67,
+                count_Recovered_R: 60,
+                count_Transferred_T: 7,
+                count_Deceased_D: 0,
+                predicted_discharge_class: "R",
+                prediction_accuracy_pct: 89.55
+            }
+        ];
+
+        // Application State & Core Logic
+        
+        let chartsInitialized = false;
+        let experienceOutcomesChartInitialized = false;
+        let coefficientChartInitialized = false;
+
+        // Navigation View Switch Logic
+        function switchView(viewId) {
+            // Update page header title
+            const titles = {
+                'dashboard': 'Hospital Overview Dashboard',
+                'patients': 'In-House Patient Directory',
+                'transfers': 'Cross-Department Transfer Logs',
+                'experience-outcomes': 'Physician Experience vs. Discharge Outcomes',
+                'los-regression': 'LOS Regression Analysis'
+            };
+            document.getElementById('current-view-title').innerText = titles[viewId];
+
+            // Hide all view sections
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-patients').classList.add('hidden');
+            document.getElementById('view-transfers').classList.add('hidden');
+            document.getElementById('view-experience-outcomes').classList.add('hidden');
+            document.getElementById('view-los-regression').classList.add('hidden');
+
+            // Remove highlight from all navigation buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-700', 'text-white');
+                btn.classList.add('text-blue-200');
+            });
+
+            // Show selected view and activate corresponding nav button
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${viewId}`);
+            if(activeBtn) {
+                activeBtn.classList.remove('text-blue-200');
+                activeBtn.classList.add('bg-blue-700', 'text-white');
+            }
+
+            // Initialize charts only on first Dashboard load
+            if (viewId === 'dashboard' && !chartsInitialized) {
+                initCharts();
+                chartsInitialized = true;
+            }
+
+            // Initialize experience outcomes chart when view is opened
+            if (viewId === 'experience-outcomes' && !experienceOutcomesChartInitialized) {
+                initExperienceOutcomesChart();
+                experienceOutcomesChartInitialized = true;
+            }
+            
+            // Initialize coefficient chart for LOS regression when view is opened
+            if (viewId === 'los-regression' && !coefficientChartInitialized) {
+                initCoefficientChart();
+                coefficientChartInitialized = true;
+            }
+        }
+
+        // Initialize Chart.js Visualizations
+        function initCharts() {
+            // Global Chart Configuration: Disable forced aspect ratio for container responsiveness
+            Chart.defaults.maintainAspectRatio = false;
+            Chart.defaults.font.family = "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+
+            // 1. Patient Origin Province Bar Chart (Query 2)
+            const ctxProv = document.getElementById('provinceChart').getContext('2d');
+            new Chart(ctxProv, {
+                type: 'bar',
+                data: {
+                    labels: provinceData.labels,
+                    datasets: [{
+                        label: 'Patient Count',
+                        data: provinceData.counts,
+                        backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                        borderColor: '#1d4ed8',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) { return `Patient Volume: ${context.parsed.y}`; }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#dbeafe' } },
+                        x: { grid: { display: false }, ticks: {
+                            callback: function(value) {
+                                const label = this.getLabelForValue(value);
+                                return label.length > 8 ? label.substr(0, 8) + '...' : label;
+                            }
+                        }}
+                    }
+                }
+            });
+
+            // 2. Physician Workload Doughnut Chart (Query 5)
+            const ctxDoc = document.getElementById('doctorChart').getContext('2d');
+            new Chart(ctxDoc, {
+                type: 'doughnut',
+                data: {
+                    labels: doctorData.labels,
+                    datasets: [{
+                        data: doctorData.counts,
+                        backgroundColor: [
+                            'rgba(37, 99, 235, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(96, 165, 250, 0.8)'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { position: 'right' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) { return ` Total Admission Cases: ${context.parsed}`; }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize Chart for Task 7 Physician Experience Outcomes
+        function initExperienceOutcomesChart() {
+            const ctx = document.getElementById('experienceOutcomesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: physicianOutcomesData.map(item => item.doctor_experience_level),
+                    datasets: [
+                        {
+                            label: 'Recovered Cases',
+                            data: physicianOutcomesData.map(item => item.count_Recovered_R),
+                            backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                            borderColor: '#1d4ed8',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Transferred Cases',
+                            data: physicianOutcomesData.map(item => item.count_Transferred_T),
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: '#2563eb',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Deceased Cases',
+                            data: physicianOutcomesData.map(item => item.count_Deceased_D),
+                            backgroundColor: 'rgba(220, 38, 38, 0.7)',
+                            borderColor: '#dc2626',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#dbeafe' },
+                            title: { display: true, text: 'Number of Cases' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    const accuracy = physicianOutcomesData[context.dataIndex].prediction_accuracy_pct;
+                                    return `${label}: ${value} (Accuracy: ${accuracy}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Initialize Coefficient Bar Chart for LOS Regression (Task 7 Query 4)
+        function initCoefficientChart() {
+            const ctx = document.getElementById('coefficientChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Age (per year)', 'BMI (per point)', 'Severity (per level)', 'Allergies (yes=1)'],
+                    datasets: [{
+                        label: 'Impact on LOS (days)',
+                        data: [
+                            REGRESSION_COEFF.beta_1_age,
+                            REGRESSION_COEFF.beta_2_bmi,
+                            REGRESSION_COEFF.beta_3_severity,
+                            REGRESSION_COEFF.beta_4_allergies
+                        ],
+                        backgroundColor: [
+                            'rgba(37, 99, 235, 0.7)',
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(220, 38, 38, 0.7)',
+                            'rgba(16, 185, 129, 0.6)'
+                        ],
+                        borderColor: [
+                            '#1d4ed8',
+                            '#2563eb',
+                            '#dc2626',
+                            '#059669'
+                        ],
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: { color: '#dbeafe' },
+                            title: { display: true, text: 'Coefficient Value (Δ in LOS days)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const direction = value >= 0 ? 'increases' : 'decreases';
+                                    return `Δ LOS: ${value.toFixed(4)} days (${direction} stay)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Calculate LOS Prediction based on user inputs
+        function calculateLOS() {
+            const age = parseFloat(document.getElementById('ageInput').value) || 0;
+            const bmi = parseFloat(document.getElementById('bmiInput').value) || 0;
+            const severity = parseFloat(document.getElementById('severitySlider').value) || 1;
+            const allergyRadio = document.querySelector('input[name="allergyRadio"]:checked');
+            const hasAllergy = allergyRadio && allergyRadio.value === 'yes' ? 1 : 0;
+            
+            const los = REGRESSION_COEFF.beta_0_intercept +
+                        REGRESSION_COEFF.beta_1_age * age +
+                        REGRESSION_COEFF.beta_2_bmi * bmi +
+                        REGRESSION_COEFF.beta_3_severity * severity +
+                        REGRESSION_COEFF.beta_4_allergies * hasAllergy;
+            
+            // Ensure non-negative LOS (clamp at 0)
+            const finalLos = Math.max(0, los);
+            document.getElementById('losPrediction').innerText = finalLos.toFixed(2);
+        }
+        
+        // Setup event listeners for LOS calculator
+        function setupLOSCalculator() {
+            const ageInput = document.getElementById('ageInput');
+            const bmiInput = document.getElementById('bmiInput');
+            const severitySlider = document.getElementById('severitySlider');
+            const severityValue = document.getElementById('severityValue');
+            const allergyRadios = document.querySelectorAll('input[name="allergyRadio"]');
+            
+            if (ageInput) ageInput.addEventListener('input', calculateLOS);
+            if (bmiInput) bmiInput.addEventListener('input', calculateLOS);
+            if (severitySlider) {
+                severitySlider.addEventListener('input', function() {
+                    if (severityValue) severityValue.innerText = this.value;
+                    calculateLOS();
+                });
+            }
+            if (allergyRadios) {
+                allergyRadios.forEach(radio => radio.addEventListener('change', calculateLOS));
+            }
+            
+            // Initial calculation
+            calculateLOS();
+        }
+
+        // Render Physician Experience Outcomes Table - SIMPLIFIED (3 columns only)
+        function renderPhysicianOutcomesTable(data) {
+            const tbody = document.getElementById('experience-outcomes-table');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            data.forEach(row => {
+                // Map predicted outcome code to full description
+                let predictedOutcomeText = '';
+                if (row.predicted_discharge_class === 'R') predictedOutcomeText = 'Recovered';
+                else if (row.predicted_discharge_class === 'T') predictedOutcomeText = 'Transferred';
+                else if (row.predicted_discharge_class === 'D') predictedOutcomeText = 'Deceased';
+                
+                const accuracyClass = row.prediction_accuracy_pct >= 90 ? 'text-emerald-600 font-bold' : 'text-amber-600 font-bold';
+                const predictedBadge = `<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">${predictedOutcomeText}</span>`;
+
+                const tableRow = `
+                    <tr class="hover:bg-blue-100 transition-colors">
+                        <td class="p-3 font-medium text-blue-900">${row.doctor_experience_level}</td>
+                        <td class="p-3">${predictedBadge}</td>
+                        <td class="p-3 ${accuracyClass}">${row.prediction_accuracy_pct}%</td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', tableRow);
+            });
+        }
+
+        // Render Dynamic Patient Data Table (Query 1 & 3)
+        function renderPatientTable(data) {
+            const tbody = document.getElementById('patient-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            data.forEach(p => {
+                const fullName = p.lastName + " " + p.firstName;
+                // Status Badge Styling
+                const statusBadge = p.status.includes('Discharge') 
+                    ? `<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">🏠 ${p.status}</span>`
+                    : `<span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium animate-pulse">🏥 ${p.status}</span>`;
+                
+                // Allergy Warning Highlight - RED
+                const allergyDisplay = p.allergies !== 'None' 
+                    ? `<span class="text-red-600 font-bold flex items-center">⚠️ ${p.allergies}</span>` 
+                    : `<span class="text-blue-400">No Recorded Allergies</span>`;
+
+                const row = `
+                    <tr class="hover:bg-blue-100 transition-colors">
+                        <td class="p-3 font-medium text-blue-900">${fullName}</td>
+                        <td class="p-3 text-blue-700">${p.admissionDate}</td>
+                        <td class="p-3">${statusBadge}</td>
+                        <td class="p-3 text-blue-800">👤 ${p.contactName}</td>
+                        <td class="p-3 font-mono text-blue-700 flex items-center space-x-1">
+                            <span>📞</span> <a href="tel:${p.contactPhone}" class="hover:text-blue-600">${p.contactPhone}</a>
+                        </td>
+                        <td class="p-3">${allergyDisplay}</td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        // Patient Table Name Search Filter
+        function filterPatients() {
+            const searchTerm = document.getElementById('patientSearch').value.toLowerCase();
+            const filteredData = patientData.filter(p => {
+                const fullName = (p.lastName + " " + p.firstName).toLowerCase();
+                return fullName.includes(searchTerm);
+            });
+            renderPatientTable(filteredData);
+        }
+
+        // Render Transfer Record Timeline (Query 4)
+        function renderTransferTimeline() {
+            const container = document.getElementById('transfer-timeline');
+            if (!container) return;
+            container.innerHTML = '';
+
+            transferData.forEach(t => {
+                const item = `
+                    <div class="relative pl-6">
+                        <!-- Timeline Dot Marker -->
+                        <div class="absolute -left-[9px] top-1.5 w-4 h-4 bg-white border-2 border-blue-600 rounded-full"></div>
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 hover:shadow-md transition-shadow">
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2">
+                                <div>
+                                    <h4 class="font-bold text-blue-900 text-lg">Patient ${t.lastName} — Inter-Department Transfer</h4>
+                                    <p class="text-sm text-blue-700 mt-1">Primary Diagnosis: <span class="font-medium text-red-600">${t.diagnosis}</span></p>
+                                </div>
+                                <span class="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded mt-2 sm:mt-0 font-mono">🕒 ${t.transferDate}</span>
+                            </div>
+                            <div class="mt-3 flex items-center space-x-2 text-sm">
+                                <span class="text-blue-600">Transfer Destination:</span>
+                                <span class="bg-blue-200 text-blue-800 px-2 py-1 rounded-md font-medium">➡️ Transferred to ${t.toDept}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', item);
+            });
+        }
+
+        // Page Load Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            renderPatientTable(patientData);
+            renderTransferTimeline();
+            renderPhysicianOutcomesTable(physicianOutcomesData);
+            setupLOSCalculator();  // Initialize LOS calculator event listeners
+            // Load dashboard as default view
+            switchView('dashboard');
+        });
+
+    </script>
+
+    <!-- External Dependency Loading Fallback Warning -->
+    <script>
+        window.addEventListener('load', function() {
+            // Delay detection to ensure library loading completion
+            setTimeout(function() {
+                if (typeof Chart === 'undefined') {
+                    var warningDiv = document.createElement('div');
+                    warningDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; background: #fee2e2; color: #dc2626; padding: 15px; text-align: center; font-family: sans-serif; z-index: 9999; border-bottom: 2px solid #ef4444; font-size: 16px; box-sizing: border-box; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+                    warningDiv.innerHTML = '<strong>⚠️ System Notice: External styling libraries failed to load.</strong><br>Layout issues occur due to local file restrictions or network instability.<br>👉 <strong>Solution:</strong> Upload this file to a web hosting platform (e.g., Netlify) and access via a live URL to restore full interface styling and interactivity.';
+                    document.body.prepend(warningDiv);
+                }
+            }, 800);
+        });
+    </script>
+</body>
+</html>

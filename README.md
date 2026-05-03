@@ -13,6 +13,19 @@ A course project implementing a **relational hospital information system** in **
 | `task_6_queries(1).sql` / `task_7_queries(1).sql` | Sample operational and analytical SQL |
 | `hospital_*.mmd` / `hospital_*.html` / `hospital_*.md` | ER diagram and relational schema documentation |
 | `webDemonstration/` | Offline demo site (`webDemonstration.html` + embedded JSON) |
+| `updated_hospital_web.html` | Clinical SIMS-style shell; **Engineer** opens the demo below with `?portal=1` |
+
+## Public demo (canonical “original” web page)
+
+Use these links in reports, assignments, or anywhere you need a **stable URL** to the **main SQL / ER demonstration** (same page as opening `webDemonstration/webDemonstration.html` locally).
+
+| Purpose | URL |
+|--------|-----|
+| **GitHub Pages** (recommended in browser) | [Open the demo](https://jingwengao-gwen.github.io/Hospital-Database-Design-CSC3170-Project/webDemonstration/webDemonstration.html) |
+| **Raw HTML** (for `fetch`, mirrors, or tools that need a direct file URL) | `https://raw.githubusercontent.com/JingwenGao-Gwen/Hospital-Database-Design-CSC3170-Project/main/webDemonstration/webDemonstration.html` |
+| **SIMS shell** (optional; links into the same demo) | [Open SIMS](https://jingwengao-gwen.github.io/Hospital-Database-Design-CSC3170-Project/updated_hospital_web.html) → **Engineer** |
+
+> **GitHub Pages:** In the repo on GitHub, use **Settings → Pages → Build and deployment → Branch `main` / (root)** so the `github.io` links above resolve. Until Pages is enabled, clone the repo and open the HTML files locally, or use the raw URL only where a single-file view is enough.
 
 ## Requirements
 
@@ -23,7 +36,7 @@ A course project implementing a **relational hospital information system** in **
 ## Quick start (MySQL)
 
 1. Create database and user as required by your course.
-2. Run in order (example):
+2. Run in order:
 
    ```sql
    SOURCE seed.sql;
@@ -47,7 +60,9 @@ This overwrites `import_data.sql` and writes `import_report.txt` (fixes applied 
 
 ## Offline web demonstration
 
-Open **`webDemonstration/webDemonstration.html`** in a browser (double‑click is OK).
+Open **`webDemonstration/webDemonstration.html`** in a browser (double‑click is OK), or use the **Public demo** links above when the project is hosted on GitHub Pages.
+
+**`updated_hospital_web.html`** (repo root): clinical dashboard UI; click **Engineer** to jump to `webDemonstration.html?portal=1` (full original demo). **Hospital Portal** in the demo top bar returns to the SIMS page.
 
 - **Relations**: table column overview + `CREATE TABLE` / constraint notes  
 - **Queries**: example SQL + cached result grids (from `webDemonstration/data/tables_preview.json`)
@@ -73,6 +88,7 @@ python webDemonstration/refresh_embedded_html.py
 ├── task_7_queries(1).sql
 ├── hospital_er_diagram.mmd
 ├── hospital_relational_schema.html
+├── updated_hospital_web.html
 ├── webDemonstration/
 │   ├── webDemonstration.html   # main offline page
 │   ├── app.js
@@ -90,10 +106,14 @@ python webDemonstration/refresh_embedded_html.py
 
 ## License / course use
 
-This repository is submitted for **CSC3170** (or as instructed by your syllabus).  
-If you reuse any part elsewhere, keep your institution’s academic integrity rules in mind.
+This repository is submitted for **CSC3170**.  
 
 ## Authors
 
-- Group members: *(add names and student IDs here)*
-
+- Group members:
+  - Jingwen Gao 123090121@link.cuhk.edu.cn
+  - Su Zhang 123090824@link.cuhk.edu.cn
+  - Hio CHeng Ho 1155206721@link.cuhk.edu.cn
+  - Yuxuan Gong 122090130@link.cuhk.edu.cn
+  - Jingyang Wang 122090528@link.cuhk.edu.cn
+  - Chung Yi CHEUNG 1155211798@link.cuhk.edu.cn

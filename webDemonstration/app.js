@@ -319,7 +319,11 @@ function setupErFullscreen() {
 }
 
 async function main() {
-  mermaid.initialize({ startOnLoad: false, theme: "dark" });
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: "dark",
+    securityLevel: "loose",
+  });
 
   const [queries, previews, seedSchema, erText] = await Promise.all([
     loadJson("./data/queries.json", "embedded-queries"),
@@ -333,12 +337,19 @@ async function main() {
     })(),
   ]);
 
-  $("erBox").textContent = erText;
+  const erEl = $("erBox");
+  if (erEl) erEl.textContent = erText;
   try {
-    await mermaid.run({ querySelector: ".mermaid" });
+    await mermaid.run({ querySelector: "#erBox.mermaid" });
   } catch (e) {
     console.error(e);
-    $("erBox").textContent = "ER diagram failed to render. Check mermaid text / loading path.";
+    const msg = e && e.message ? e.message : String(e);
+    if (erEl) {
+      erEl.textContent =
+        "ER diagram failed to render. Details: " +
+        msg +
+        ". If this file is opened via file://, try a local static server (e.g. npx serve) from the project folder.";
+    }
   }
   setupErFullscreen();
 

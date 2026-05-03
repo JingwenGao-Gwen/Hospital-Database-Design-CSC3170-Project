@@ -12,6 +12,7 @@
       <div class="brand">Hospital DataBase</div>
       <div class="sub">Pick a query from the menu</div>
       <div class="topbarRight">
+        <a id="hospitalPortalNav" class="simPortalReturn" hidden href="../updated_hospital_web.html">Hospital Portal</a>
         <label class="themeLabel" for="themeSelect">Theme</label>
         <select id="themeSelect" class="themeSelect" aria-label="Theme">
           <option value="midnight">Midnight (dark)</option>
@@ -155,6 +156,16 @@
         string exam_result
         date exam_date
     }
+</script>
+<script>
+(function () {
+  try {
+    if (new URLSearchParams(location.search).get("portal") === "1") {
+      var a = document.getElementById("hospitalPortalNav");
+      if (a) a.removeAttribute("hidden");
+    }
+  } catch (e) {}
+})();
 </script>
 <script src="./app.js"></script>
   </body>

@@ -352,3 +352,20 @@ td code{font-family:var(--mono); color: var(--code-fg)}
   .panel{min-height:auto}
   .menu{height:auto; max-height:320px}
 }
+
+/* Return link when opened from SIMS (updated_hospital_web.html ?portal=1) — clinical blue strip */
+.simPortalReturn{
+  margin-right:12px;
+  padding:8px 14px;
+  border-radius:10px;
+  border:1px solid #bfdbfe;
+  background:#eff6ff;
+  color:#1e3a8a;
+  font-size:13px;
+  font-weight:600;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.simPortalReturn:hover{
+  background:#dbeafe;
+}
